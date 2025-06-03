@@ -1,0 +1,100 @@
+blueprint:
+  name: Motion-Activated Light with Brightness Condition
+  description: Turns on a light when motion is detected if brightness is below a threshold, then turns it off after a delay. Optionally, prevents rechecking brightness on restart.
+  domain: automation
+  author: Johannes Peter
+  input:
+    motion_sensor:
+      name: Motion Sensor
+      description: The motion sensor entity
+      selector:
+        entity:
+          filter:
+            - device_class: occupancy
+              domain: binary_sensor
+            - device_class: motion
+              domain: binary_sensor
+    brightness_sensor:
+      name: Brightness Sensor
+      description: The brightness sensor entity
+      selector:
+        entity:
+          filter:
+            - device_class: illuminance
+              domain: sensor
+    brightness_threshold:
+      name: Brightness Threshold
+      description: Light turns on only if brightness is below this value
+      default: 100
+      selector:
+        number:
+          min: 0
+          max: 5000
+          unit_of_measurement: lux
+    light:
+      name: Light
+      description: The light to control
+      selector:
+        target:
+          entity:
+            domain: light
+    no_motion_wait:
+      name: No Motion Wait Time
+      description: Time to wait after no motion before turning off the light
+      default: 120
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
+    disable_brightness_on_restart:
+      name: Disable Brightness Check on Restart
+      description: If enabled, the light will stay on after motion restarts without rechecking brightness.
+      default: false
+      selector:
+        boolean:
+
+# If motion is detected within the delay, we restart the script.
+mode: restart
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input motion_sensor
+    to: "on"
+  - trigger: state
+    entity_id: !input motion_sensor
+    to: "off"
+    for:
+      seconds: !input no_motion_wait
+
+variables:
+  light: !input light
+
+actions:
+  #- variables:
+  #    already_on: "{{ is_state(light, 'on') }}"
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: !input motion_sensor
+            state: "on"
+        sequence:
+          - condition: or
+            conditions:
+              - condition: template
+                value_template: "{{ already_on }}"
+              - condition: numeric_state
+                entity_id: !input brightness_sensor
+                below: !input brightness_threshold
+          - action: light.turn_on
+            target: !input light
+      - conditions:
+          - condition: state
+            entity_id: !input motion_sensor
+            state: "off"
+            for:
+              seconds: !input no_motion_wait
+        sequence:
+          - action: light.turn_off
+            target: !input light
