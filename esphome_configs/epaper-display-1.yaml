@@ -1,0 +1,688 @@
+esphome:
+  name: "epaper-display-1"
+  friendly_name: EPaper Display 1
+  min_version: 2025.9.0
+  name_add_mac_suffix: false
+
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          auto now = id(home_time).now();
+          if (now.is_valid()) {
+            char buf[25];
+            snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
+                    now.year, now.month, now.day_of_month,
+                    now.hour, now.minute, now.second);
+            id(last_wakeup).publish_state(buf);
+          } else {
+            id(last_wakeup).publish_state("unknown");
+          }
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+substitutions:
+  display_name: EPaper Display 1
+  runtime_minutes: 1
+  daytime_sleep_minutes: 9
+  nighttime_sleep_minutes: 60
+
+# Add this global variable at the top level
+globals:
+  - id: sleep_minutes
+    type: int
+    initial_value: '0'  # irrevelant, will be overwritten by the update in the interval
+    restore_value: false
+  - id: display_update_in_progress
+    type: bool
+    initial_value: 'false'
+  - id: ota_mode
+    type: bool
+    initial_value: 'false'
+    restore_value: false
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+# OTA update
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# WiFi configuration
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+# Captive portal for fallback
+captive_portal:
+
+# SPI bus config (for ePaper)
+spi:
+  clk_pin: 13
+  mosi_pin: 14
+
+# Deep sleep to save battery
+deep_sleep:
+  id: deep_sleep_control
+  run_duration: ${runtime_minutes}min
+  sleep_duration: ${daytime_sleep_minutes}min
+
+# Fonts
+font:
+  - file: "gfonts://Roboto"
+    id: roboto_20
+    size: 20
+    glyphsets:
+      - GF_Latin_Core
+  - file: "gfonts://Inter"
+    id: inter_20
+    size: 20
+    glyphsets:
+      - GF_Latin_Core
+  - file: "fonts/segoeuithis.ttf"
+    id: segoe_xlarge
+    size: 50
+    glyphs: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!?.,:;'\"+-=_/\\@$%∞ ƒ÷‹‰ˆ¸ﬂ"
+  - file: "fonts/segoeuithis.ttf"
+    id: segoe_large
+    size: 40
+    glyphs: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!?.,:;'\"+-=_/\\@$%∞ ƒ÷‹‰ˆ¸ﬂ"
+  - file: "fonts/segoeuithis.ttf"
+    id: segoe_medium
+    size: 32
+    glyphs: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!?.,:;'\"+-=_/\\@$%∞ ƒ÷‹‰ˆ¸ﬂ"
+  - file: "fonts/segoeuithis.ttf"
+    id: segoe_small
+    size: 20
+    glyphs: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!?.,:;'\"+-=_/\\@$%∞ ƒ÷‹‰ˆ¸ﬂ"
+  - file: "fonts/segoeuithis.ttf"
+    id: segoe_xsmall
+    size: 11
+    glyphs: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!?.,:;'\"+-=_/\\@$%∞ ƒ÷‹‰ˆ¸ﬂ"
+  - file: "fonts/materialdesignicons-webfont.ttf"
+    id: mdi
+    size: 32
+    glyphs: &mdi-glyphs
+      - "\U000F1217" # file-sync-outline
+      - "\U000F04E8" # sync-off
+      - "\U000F0826" # home-account
+      - "\U000F087B" # home-alert
+      - "\U000F15D0" # home-alert-outline
+      - "\U000F0EBA" # home-analytics
+      - "\U000F07D0" # home-assistant
+      - "\U000F07D1" # home-automation
+      - "\U000F1901" # home-battery
+      - "\U000F1902" # home-battery-outline
+      - "\U000F07D2" # home-circle
+      - "\U000F104D" # home-circle-outline
+      - "\U000F0D15" # home-city
+      - "\U000F0D16" # home-city-outline
+      - "\U000F1A12" # home-clock
+      - "\U000F1A13" # home-clock-outline
+      - "\U000F1159" # home-edit
+      - "\U000F115A" # home-edit-outline
+      - "\U000F0F9B" # home-export-outline
+      - "\U000F0EFA" # home-flood
+      - "\U000F0DD2" # home-floor-0
+      - "\U000F0D80" # home-floor-1
+      - "\U000F0D81" # home-floor-2
+      - "\U000F0D82" # home-floor-3
+      - "\U000F0D83" # home-floor-a
+      - "\U000F0D84" # home-floor-b
+      - "\U000F0D85" # home-floor-g
+      - "\U000F0D86" # home-floor-l
+      - "\U000F0DD3" # home-floor-negative-1
+      - "\U000F0DD4" # home-group
+      - "\U000F19C1" # home-group-minus
+      - "\U000F19C0" # home-group-plus
+      - "\U000F19C2" # home-group-remove
+      - "\U000F0827" # home-heart
+      - "\U000F0F9C" # home-import-outline
+      - "\U000F1251" # home-lightbulb
+      - "\U000F1252" # home-lightbulb-outline
+      - "\U000F1903" # home-lightning-bolt
+      - "\U000F1904" # home-lightning-bolt-outline
+      - "\U000F08EB" # home-lock
+      - "\U000F08EC" # home-lock-open
+      - "\U000F05F8" # home-map-marker
+      - "\U000F0974" # home-minus
+      - "\U000F13D5" # home-minus-outline
+      - "\U000F02DD" # home-modern
+      - "\U000F1A46" # home-off
+      - "\U000F1A47" # home-off-outline
+      - "\U000F06A1" # home-outline
+      - "\U000F1C7C" # home-percent
+      - "\U000F1C7D" # home-percent-outline
+      - "\U000F0975" # home-plus
+      - "\U000F13D6" # home-plus-outline
+      - "\U000F1247" # home-remove
+      - "\U000F13D7" # home-remove-outline
+      - "\U000F112B" # home-roof
+      - "\U000F13B0" # home-search
+      - "\U000F13B1" # home-search-outline
+      - "\U000F1BA0" # home-silo
+      - "\U000F1BA1" # home-silo-outline
+      - "\U000F1C2F" # home-sound-in
+      - "\U000F1C30" # home-sound-in-outline
+      - "\U000F1C31" # home-sound-out
+      - "\U000F1C32" # home-sound-out-outline
+      - "\U000F1794" # home-switch
+      - "\U000F1795" # home-switch-outline
+      - "\U000F0F54" # home-thermometer
+      - "\U000F0F55" # home-thermometer-outline
+      - "\U000F02DE" # home-variant
+      - "\U000F0BA7" # home-variant-outline
+      - "\U000F140B" # lightning-bolt
+      - "\U000F0820" # lightning-bolt-circle
+      - "\U000F140C" # lightning-bolt-outline
+      - "\U000F058C" # water
+      - "\U000F058E" # water-percent
+      - "\U000F05F1" # ev-station
+      - "\U000F00ED" # calendar
+      - "\U000F0130" # checkbox-blank-circle-outline
+      - "\U000F0590" # weather-cloudy
+      - "\U000F0F2F" # weather-cloudy-alert
+      - "\U000F0E6E" # weather-cloudy-arrow-right
+      - "\U000F18F6" # weather-cloudy-clock
+      - "\U000F1B5A" # weather-dust
+      - "\U000F0591" # weather-fog
+      - "\U000F0592" # weather-hail
+      - "\U000F0F30" # weather-hazy
+      - "\U000F0898" # weather-hurricane
+      - "\U000F1C78" # weather-hurricane-outline
+      - "\U000F0593" # weather-lightning
+      - "\U000F067E" # weather-lightning-rainy
+      - "\U000F1D15" # weather-moonset
+      - "\U000F1D16" # weather-moonset-down
+      - "\U000F1D17" # weather-moonset-up
+      - "\U000F0594" # weather-night
+      - "\U000F0F31" # weather-night-partly-cloudy
+      - "\U000F0595" # weather-partly-cloudy
+      - "\U000F0F32" # weather-partly-lightning
+      - "\U000F0F33" # weather-partly-rainy
+      - "\U000F0F34" # weather-partly-snowy
+      - "\U000F0F35" # weather-partly-snowy-rainy
+      - "\U000F0596" # weather-pouring
+      - "\U000F0597" # weather-rainy
+      - "\U000F0598" # weather-snowy
+      - "\U000F0F36" # weather-snowy-heavy
+      - "\U000F067F" # weather-snowy-rainy
+      - "\U000F0599" # weather-sunny
+      - "\U000F0F37" # weather-sunny-alert
+      - "\U000F14E4" # weather-sunny-off
+      - "\U000F059A" # weather-sunset
+      - "\U000F059B" # weather-sunset-down
+      - "\U000F059C" # weather-sunset-up
+      - "\U000F0F38" # weather-tornado
+      - "\U000F059D" # weather-windy
+      - "\U000F059E" # weather-windy-variant
+      - "\U000F1A78" # sun-clock-outline
+      - "\U000F15FA" # windsock
+      - "\U000F00A7" # biohazard
+      - "\U000F01B4" # waste-delete
+      - "\U000F044C" # recycle
+      - "\U000F1A38" # compost
+  - file: "fonts/materialdesignicons-webfont.ttf"
+    id: mdi_small
+    size: 16
+    glyphs: *mdi-glyphs
+  - file: "fonts/materialdesignicons-webfont.ttf"
+    id: mdi_large
+    size: 48
+    glyphs: *mdi-glyphs
+
+image:
+  - id: guest_wifi_qr_code
+    file: "images/guest_wifi_qr_code.png"
+    type: binary
+    resize: 128x128
+
+# Time from Home Assistant
+time:
+  - platform: homeassistant
+    id: home_time
+    timezone: Europe/Berlin
+
+# Sensors
+sensor:
+  # ESP Home Uptime
+  - platform: uptime
+    id: uptime_sensor
+    update_interval: 35s
+    on_raw_value:
+      then:
+      - text_sensor.template.publish:
+            id: uptime_human
+            state: !lambda |-
+              int seconds = round(id(uptime_sensor).raw_state);
+              int days = seconds / (24 * 3600);
+              seconds = seconds % (24 * 3600);
+              int hours = seconds / 3600;
+              seconds = seconds % 3600;
+              int minutes = seconds /  60;
+              seconds = seconds % 60;
+              return (
+                (days ? std::to_string(days) + ":" : "000:") +
+                (hours ? std::to_string(hours) + ":" : "00:") +
+                (minutes ? std::to_string(minutes) + ":" : "00:") +
+                (std::to_string(seconds) + "")
+              ).c_str();  
+
+  # Temperature and humidity sensors for each room
+  - platform: homeassistant
+    id: temp_wohnzimmer
+    entity_id: sensor.temperatursensor_wohnzimmer_temperature
+  - platform: homeassistant
+    id: humid_wohnzimmer
+    entity_id: sensor.temperatursensor_wohnzimmer_humidity
+  - platform: homeassistant
+    id: temp_bad
+    entity_id: sensor.temperatursensor_bad_temperature
+  - platform: homeassistant
+    id: humid_bad
+    entity_id: sensor.temperatursensor_bad_humidity
+  - platform: homeassistant
+    id: temp_buro
+    entity_id: sensor.temperatursensor_buro_temperature
+  - platform: homeassistant
+    id: humid_buro
+    entity_id: sensor.temperatursensor_buro_humidity
+  - platform: homeassistant
+    id: temp_schlafzimmer
+    entity_id: sensor.temperatursensor_schlafzimmer_temperature
+  - platform: homeassistant
+    id: humid_schlafzimmer
+    entity_id: sensor.temperatursensor_schlafzimmer_humidity
+  - platform: homeassistant
+    id: temp_klo
+    entity_id: sensor.temperatursensor_klo_temperature
+  - platform: homeassistant
+    id: humid_klo
+    entity_id: sensor.temperatursensor_klo_humidity
+
+  # Energy usage sensor
+  - platform: homeassistant
+    id: energy_today
+    entity_id: sensor.energy_production_today       # Daily electricity generation
+  - platform: homeassistant
+    id: energy_hour
+    entity_id: sensor.energy_current_hour
+  - platform: homeassistant
+    id: battery_charge_percent
+    entity_id: sensor.senec_battery_charge_percent
+
+  # Weather info from HA
+  - platform: homeassistant
+    id: weather_temp
+    entity_id: sensor.eltako_gw1_05_1e_00_d5_weather_station_temperature
+  - platform: homeassistant
+    id: weather_wind
+    entity_id: sensor.eltako_gw1_05_1e_00_d5_weather_station_wind_speed
+  - platform: homeassistant
+    id: weather_rain
+    entity_id: sensor.eltako_gw1_05_1e_00_d5_weather_station_rain
+
+  # Battery voltage sensor (via voltage divider)
+  - platform: adc
+    pin: GPIO34
+    name: "Battery Voltage"
+    id: battery_voltage
+    attenuation: auto
+    update_interval: 600s
+    #filters:
+    #  - multiply: 1.92                   # Voltage divider correction factor
+
+  # Battery percentage (calculated from voltage)
+  - platform: template
+    name: "Battery Level (%)"
+    id: battery_level
+    unit_of_measurement: "%"
+    icon: "mdi:battery"
+    update_interval: 600s
+    lambda: |-
+      float v = id(battery_voltage).state;
+      return (v < 3.2) ? 0 : (v > 4.2) ? 100 : ((v - 3.2) / 1.0) * 100.0;
+
+# Text values from HA (calendar, tasks, EV status, etc.)
+text_sensor:
+  # Trash
+  - platform: homeassistant
+    id: abholung_biotonne
+    entity_id: sensor.nachste_abholung_biotonne
+    filters:
+      - substitute:
+          - "Today -> heute!"
+          - "Tomorrow -> morgen"
+          - "days -> Tagen"
+  - platform: homeassistant
+    id: abholung_gelbe_tonne
+    entity_id: sensor.nachste_abholung_gelbe_tonne
+    filters:
+      - substitute:
+          - "Today -> heute!"
+          - "Tomorrow -> morgen"
+          - "days -> Tagen"
+  - platform: homeassistant
+    id: abholung_restmulltonne
+    entity_id: sensor.nachste_abholung_restmulltonne
+    filters:
+      - substitute:
+          - "Today -> heute!"
+          - "Tomorrow -> morgen"
+          - "days -> Tagen"
+  # Weather & Sun
+  - platform: homeassistant
+    id: weather_condition
+    entity_id: sensor.openweathermap_condition
+  - platform: homeassistant
+    id: next_sunrise
+    entity_id: sensor.sun_next_rising
+  - platform: homeassistant
+    id: next_sunset
+    entity_id: sensor.sun_next_setting
+  # Reporting back to HA
+  - platform: template
+    name: "${display_name} ESPHome Uptime"
+    id: uptime_human
+  - platform: template
+    name: "${display_name} Last Wake-Up"
+    id: last_wakeup
+    retain: true
+
+# Display configuration (Waveshare 7.5" ePaper)
+display:
+  - platform: waveshare_epaper
+    id: epaper_display
+    cs_pin: 15
+    dc_pin: 27
+    busy_pin: 25
+    reset_pin: 26
+    # 7.50in         - not working
+    # 7.50in-bV2     - not working
+    # 7.50in-bV3     - good
+    # 7.50in-bc      - not working
+    # 7.50inV2       - no image after refresh
+    # 7.50inV2alt    - ok, image not so clear
+    # 7.50inV2p      - not working
+    # 7.50in-hd-b    - not working
+    model: 7.50in-bV3 #7.50inv2alt
+    rotation: 90∞
+    reset_duration: 2ms
+    update_interval: never # we handle the display update manually in an "interval" section
+    lambda: |-
+      int margin_x = 20;
+      int margin_y = 15;
+      int line_height = 40;
+      int table_start_y = 210;
+
+      auto now = id(home_time).now();
+      int timezone_offset = now.is_dst ? 2 : 1;
+
+      if (now.is_valid()) {
+        const char* days[] = {"", "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"};
+        const char* months[] = {"", "Januar", "Februar", "M‰rz", "April", "Mai", "Juni",
+                                "Juli", "August", "September", "Oktober", "November", "Dezember"};
+
+        int day_of_week = now.day_of_week;
+        int day = now.day_of_month;
+        int month = now.month;
+        int hour = now.hour;
+        int minute = now.minute;
+        int second = now.second;
+
+        char date_en[64];
+        snprintf(date_en, sizeof(date_en), "%s, %d. %s", days[day_of_week], day, months[month]);
+
+        it.printf(margin_x, margin_y, id(segoe_large), TextAlign::TOP_LEFT, "%s", date_en);
+        it.strftime(margin_x, 5, id(segoe_xsmall), TextAlign::TOP_LEFT, "%X", id(home_time).now());  // add hour and minute
+
+      } else {
+        it.printf(margin_x, margin_y, id(segoe_large), "Invalid Date");
+      }
+
+      it.printf(margin_x, margin_y + 80, id(mdi), TextAlign::TOP_LEFT,
+        "%s",
+        id(weather_rain).state == 0 ? "\U000F0596" :
+        strcmp(id(weather_condition).state.c_str(), "clear-night") == 0 ? "\U000F0594" :
+        strcmp(id(weather_condition).state.c_str(), "cloudy") == 0 ? "\U000F0590" :
+        strcmp(id(weather_condition).state.c_str(), "partlycloudy") == 0 ? "\U000F0595" :
+        strcmp(id(weather_condition).state.c_str(), "fog") == 0 ? "\U000F0591" :
+        strcmp(id(weather_condition).state.c_str(), "rainy") == 0 ? "\U000F0596" :
+        strcmp(id(weather_condition).state.c_str(), "sunny") == 0 ? "\U000F0599" :
+        "\U000F0F2F"
+      );
+      it.printf(margin_x + 40, margin_y + 70, id(segoe_medium), TextAlign::TOP_LEFT, "%.1f ∞C", id(weather_temp).state);
+
+      it.printf(margin_x + 160, margin_y + 80, id(mdi), TextAlign::TOP_LEFT, "\U000F15FA");
+      it.printf(margin_x + 200, margin_y + 70, id(segoe_medium), TextAlign::TOP_LEFT, "%.1f km/h", id(weather_wind).state);
+
+      // Sunrise + Sunset
+      int hour, min, sec;
+      char new_time[9];
+      if (sscanf(id(next_sunrise).state.c_str(), "%*4d-%*2d-%*2dT%2d:%2d:%2d", &hour, &min, &sec) == 3) {
+        hour += timezone_offset;
+        snprintf(new_time, sizeof(new_time), "%02d:%02d:%02d", hour, min, sec);
+      }
+      else {
+        snprintf(new_time, sizeof(new_time), "--:--:--");
+      }
+      it.printf(margin_x,      margin_y + 125, id(mdi), "\U000F059C");
+      it.printf(margin_x + 40, margin_y + 125, id(segoe_small), "%s", new_time);
+
+      if (sscanf(id(next_sunset).state.c_str(), "%*4d-%*2d-%*2dT%2d:%2d:%2d", &hour, &min, &sec) == 3) {
+        hour += timezone_offset;
+        snprintf(new_time, sizeof(new_time), "%02d:%02d:%02d", hour, min, sec);
+      }
+      else {
+        snprintf(new_time, sizeof(new_time), "--:--:--");
+      }
+      it.printf(margin_x + 150, margin_y + 125, id(mdi), "\U000F059B");
+      it.printf(margin_x + 190, margin_y + 125, id(segoe_small), "%s", new_time);
+
+
+
+      it.line(0, table_start_y - 15, 800, table_start_y - 15);
+
+      it.print(margin_x, table_start_y, id(mdi), TextAlign::TOP_LEFT, "\U000F02DE");
+      it.print(margin_x + 220, table_start_y, id(mdi), TextAlign::TOP_LEFT, "\U000F0F54");
+      it.print(margin_x + 350, table_start_y, id(mdi), TextAlign::TOP_LEFT, "\U000F058E");
+
+      it.print(margin_x, table_start_y + line_height, id(segoe_small), TextAlign::TOP_LEFT, "Wohnzimmer");
+      it.printf(margin_x + 220, table_start_y + line_height, id(segoe_small), "%.1f ∞C", id(temp_wohnzimmer).state);
+      it.printf(margin_x + 350, table_start_y + line_height, id(segoe_small), "%.0f %%", id(humid_wohnzimmer).state);
+
+      it.print(margin_x, table_start_y + 2*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Bad");
+      it.printf(margin_x + 220, table_start_y + 2*line_height, id(segoe_small), "%.1f ∞C", id(temp_bad).state);
+      it.printf(margin_x + 350, table_start_y + 2*line_height, id(segoe_small), "%.0f %%", id(humid_bad).state);
+
+      it.print(margin_x, table_start_y + 3*line_height, id(segoe_small), TextAlign::TOP_LEFT, "B¸ro");
+      it.printf(margin_x + 220, table_start_y + 3*line_height, id(segoe_small), "%.1f ∞C", id(temp_buro).state);
+      it.printf(margin_x + 350, table_start_y + 3*line_height, id(segoe_small), "%.0f %%", id(humid_buro).state);
+
+      it.print(margin_x, table_start_y + 4*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Schlafzimmer");
+      it.printf(margin_x + 220, table_start_y + 4*line_height, id(segoe_small), "%.1f ∞C", id(temp_schlafzimmer).state);
+      it.printf(margin_x + 350, table_start_y + 4*line_height, id(segoe_small), "%.0f %%", id(humid_schlafzimmer).state);
+
+      it.print(margin_x, table_start_y + 5*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Klo");
+      it.printf(margin_x + 220, table_start_y + 5*line_height, id(segoe_small), "%.1f ∞C", id(temp_klo).state);
+      it.printf(margin_x + 350, table_start_y + 5*line_height, id(segoe_small), "%.0f %%", id(humid_klo).state);
+
+      it.line(0, 455, 800, 455);
+      it.printf(margin_x, 465, id(mdi), "\U000F140B");
+      it.printf(margin_x + 40, 465, id(segoe_small), "%.1f kWh", id(energy_today).state);
+      it.printf(margin_x + 150, 465, id(segoe_small), "%.1f kWh", id(energy_hour).state);
+      it.printf(margin_x + 350, 465, id(mdi), "\U000F1901");
+      it.printf(margin_x + 390, 465, id(segoe_small), "%.0f %%", id(battery_charge_percent).state);
+
+      
+
+      it.line(0, 540, 800, 540);
+      if (!id(abholung_biotonne).state.empty()) {
+        it.printf(margin_x, 560, id(mdi), "\U000F1A38");
+        it.printf(margin_x + 40, 560, id(segoe_small), "Biom¸ll %s", id(abholung_biotonne).state.c_str());
+      }
+      if (!id(abholung_gelbe_tonne).state.empty()) {
+        it.printf(margin_x, 560 + line_height, id(mdi), "\U000F044C");
+        it.printf(margin_x + 40, 560 + line_height, id(segoe_small), "Gelbe Tonne %s", id(abholung_gelbe_tonne).state.c_str());
+      }
+      if (!id(abholung_restmulltonne).state.empty()) {
+        it.printf(margin_x, 560 + 2*line_height, id(mdi), "\U000F01B4");
+        it.printf(margin_x + 40, 560 + 2*line_height, id(segoe_small), "Restm¸ll %s", id(abholung_restmulltonne).state.c_str());
+      }
+
+
+      //it.printf(margin_x + 10, 680, id(segoe_small), "Wohnzimmer Biom¸ll 21.4 ∞C 99 %%. Lorem ipsum dolor sit amet.");
+      //it.printf(margin_x + 10, 710, id(inter_20),    "Wohnzimmer Biom¸ll 21.4 ∞C 99 %%. Lorem ipsum dolor sit amet.");
+      //it.printf(margin_x + 10, 740, id(roboto_20),   "Wohnzimmer Biom¸ll 21.4 ∞C 99 %%. Lorem ipsum dolor sit amet.");
+
+
+      if (id(ota_mode)) {
+        it.printf(10, 770, id(mdi_small), "\U000F1217");
+      }
+      else {
+        it.printf(10, 770, id(mdi_small), "\U000F04E8");
+      }
+      if (id(sleep_minutes) == 9) {
+        it.printf(30, 770, id(mdi_small), "\U000F1A78");
+      }
+      else {
+        it.printf(30, 770, id(mdi_small), "\U000F0594");
+      }
+
+      //it.image(it.get_width()-10, it.get_height()-10, id(guest_wifi_qr_code), ImageAlign::BOTTOM_RIGHT);
+
+# Scripts
+script:
+  - id: update_display
+    mode: single
+    then:
+      - globals.set:
+          id: display_update_in_progress
+          value: 'true'
+      - logger.log:
+          format: "Starting display update. OTA mode is %s."
+          args: [ 'id(ota_mode)==1 ? "enabled" : "disabled"' ]
+      - component.update: epaper_display
+      - delay: 8s  # Wait for display to finish (7.5" takes ~4-5 seconds)
+      - lambda: |-
+          id(epaper_display).command(0x02);  // Power off command
+      - logger.log: "Display powered off."
+      - delay: 1s
+      - globals.set:
+          id: display_update_in_progress
+          value: 'false'
+
+# Manage display updates manually
+interval:
+  - interval: 10s
+    startup_delay: 5s
+    then:
+      - lambda: |-
+          auto time = id(home_time).now();
+          if (!time.is_valid()) {
+            ESP_LOGI("main", "Time not yet received, keeping default sleep time for now");
+            id(deep_sleep_control).set_sleep_duration(${daytime_sleep_minutes}*60*1000);
+            id(sleep_minutes) = ${daytime_sleep_minutes};
+            return;
+          }
+
+          static bool updated = false;
+          if (updated) return;  // only check time once per boot
+          updated = true;
+
+          if (time.hour >= 21 || time.hour < 5) {
+            ESP_LOGI("main", "Nighttime detected ó setting sleep to ${nighttime_sleep_minutes}min.");
+            id(deep_sleep_control).set_sleep_duration(${nighttime_sleep_minutes}*60*1000);
+            id(sleep_minutes) = ${nighttime_sleep_minutes};
+          } else {
+            ESP_LOGI("main", "Daytime detected ó setting sleep to ${daytime_sleep_minutes}min.");
+            id(deep_sleep_control).set_sleep_duration(${daytime_sleep_minutes}*60*1000);
+            id(sleep_minutes) = ${daytime_sleep_minutes};
+          }
+      - mqtt.publish: 
+          topic: epaper_display/1/mode
+          payload: !lambda |-
+            return (id(sleep_minutes) >= ${nighttime_sleep_minutes})
+              ? "Night mode - ${nighttime_sleep_minutes} min sleep"
+              : "Day mode - ${daytime_sleep_minutes} min sleep";
+          retain: false
+  - interval: 300s           # this is only relevant when the OTA mode is active, otherwise this updates once every time we wake up 
+    startup_delay: 30s       # from deep sleep as the interval duration is longer than the run_duration
+    then:
+      - script.execute: update_display
+
+# MQTT
+mqtt:
+  broker: !secret mqtt_ip
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+  topic_prefix: epaper_display/1
+  on_message:
+    - topic: epaper_display/1/display_update
+      payload: 'ON'
+      then:
+        - logger.log: "Received display update request via MQTT."
+        - mqtt.publish: 
+            topic: epaper_display/1/display_update     # clear the message
+            payload: ""
+            retain: true
+        - script.execute: update_display
+    - topic: epaper_display/1/ota_mode
+      payload: 'ON'
+      qos: 2
+      then:
+        - deep_sleep.prevent: deep_sleep_control
+        - logger.log: "Enable OTA mode, disable deep sleep."
+        - globals.set: 
+            id: ota_mode
+            value: 'true'
+        # update the screen if the uptime is > 40s
+        - if:
+            condition:
+              lambda: 'return id(uptime_sensor).raw_state > 40;'
+            then:
+              - script.execute: update_display
+    - topic: epaper_display/1/ota_mode
+      payload: 'OFF'
+      qos: 2
+      then:
+        - logger.log: "Disable OTA mode, enable deep sleep."
+        - globals.set: 
+            id: ota_mode
+            value: 'false'
+        # update the screen if the uptime is > 40s
+        - if:
+            condition:
+              lambda: 'return id(uptime_sensor).raw_state > 40;'
+            then:
+              - script.execute: update_display
+        - mqtt.publish:
+            topic: epaper_display/1/ota_mode    # clear the message
+            payload: ""
+            qos: 2
+            retain: true      
+        - deep_sleep.allow: deep_sleep_control
+    - topic: epaper_display/1/sleep_mode
+      payload: 'ON'
+      qos: 2
+      then:
+        - if:
+            condition:
+              lambda: 'return !id(ota_mode);'
+            then:
+              - logger.log: "Entering forced deep sleep."
+              - mqtt.publish:
+                  topic: epaper_display/1/sleep_mode    # clear the message
+                  payload: ""
+                  qos: 2
+                  retain: true
+              - deep_sleep.enter: deep_sleep_control
+            else:
+              - logger.log: "Ignored forced sleep request ó OTA mode active."
