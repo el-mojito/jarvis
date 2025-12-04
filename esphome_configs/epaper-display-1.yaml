@@ -229,6 +229,13 @@ font:
       - "\U000F01B4" # waste-delete
       - "\U000F044C" # recycle
       - "\U000F1A38" # compost
+      - "\U000F1A45" # heat-wave
+      - "\U000F1A25" # toggle-switch-variant
+      - "\U000F1A26" # toggle-switch-variant-off
+  - file: "fonts/materialdesignicons-webfont.ttf"
+    id: mdi_xsmall
+    size: 13
+    glyphs: *mdi-glyphs
   - file: "fonts/materialdesignicons-webfont.ttf"
     id: mdi_small
     size: 16
@@ -249,6 +256,31 @@ time:
   - platform: homeassistant
     id: home_time
     timezone: Europe/Berlin
+
+# Binary Sensors
+binary_sensor:
+  # Proxon PCT
+  - platform: homeassistant
+    id: pct_status_abstellraum
+    entity_id: binary_sensor.proxon_heizelement_status_abstellraum
+  - platform: homeassistant
+    id: pct_status_buro
+    entity_id: binary_sensor.proxon_heizelement_status_buro
+  - platform: homeassistant
+    id: pct_status_flur
+    entity_id: binary_sensor.proxon_heizelement_status_flur
+  - platform: homeassistant
+    id: pct_status_klara
+    entity_id: binary_sensor.proxon_heizelement_status_klara
+  - platform: homeassistant
+    id: pct_status_nils
+    entity_id: binary_sensor.proxon_heizelement_status_nils
+  - platform: homeassistant
+    id: pct_status_schlafzimmer
+    entity_id: binary_sensor.proxon_heizelement_status_schlafzimmer
+  - platform: homeassistant
+    id: pct_status_wohnzimmer
+    entity_id: binary_sensor.proxon_heizelement_status_wohnzimmer_esszimmer_2
 
 # Sensors
 sensor:
@@ -283,17 +315,17 @@ sensor:
     id: humid_wohnzimmer
     entity_id: sensor.temperatursensor_wohnzimmer_humidity
   - platform: homeassistant
-    id: temp_bad
-    entity_id: sensor.temperatursensor_bad_temperature
+    id: temp_abstellraum
+    entity_id: sensor.temperatursensor_abstellraum_temperature
   - platform: homeassistant
-    id: humid_bad
-    entity_id: sensor.temperatursensor_bad_humidity
+    id: humid_abstellraum
+    entity_id: sensor.temperatursensor_abstellraum_humidity
   - platform: homeassistant
-    id: temp_buro
-    entity_id: sensor.temperatursensor_buro_temperature
+    id: temp_klo
+    entity_id: sensor.temperatursensor_klo_temperature
   - platform: homeassistant
-    id: humid_buro
-    entity_id: sensor.temperatursensor_buro_humidity
+    id: humid_klo
+    entity_id: sensor.temperatursensor_klo_humidity
   - platform: homeassistant
     id: temp_schlafzimmer
     entity_id: sensor.temperatursensor_schlafzimmer_temperature
@@ -301,11 +333,35 @@ sensor:
     id: humid_schlafzimmer
     entity_id: sensor.temperatursensor_schlafzimmer_humidity
   - platform: homeassistant
-    id: temp_klo
-    entity_id: sensor.temperatursensor_klo_temperature
+    id: temp_nils
+    entity_id: sensor.temperatursensor_nils_temperature
   - platform: homeassistant
-    id: humid_klo
-    entity_id: sensor.temperatursensor_klo_humidity
+    id: humid_nils
+    entity_id: sensor.temperatursensor_nils_humidity
+  - platform: homeassistant
+    id: temp_klara
+    entity_id: sensor.temperatursensor_klara_temperature
+  - platform: homeassistant
+    id: humid_klara
+    entity_id: sensor.temperatursensor_klara_humidity
+  - platform: homeassistant
+    id: temp_buro
+    entity_id: sensor.temperatursensor_buro_temperature
+  - platform: homeassistant
+    id: humid_buro
+    entity_id: sensor.temperatursensor_buro_humidity
+  - platform: homeassistant
+    id: temp_bad
+    entity_id: sensor.temperatursensor_bad_temperature
+  - platform: homeassistant
+    id: humid_bad
+    entity_id: sensor.temperatursensor_bad_humidity
+  - platform: homeassistant
+    id: temp_garage
+    entity_id: sensor.eltako_gw1_05_a4_1f_30_temperature
+  - platform: homeassistant
+    id: humid_garage
+    entity_id: sensor.eltako_gw1_05_a4_1f_30_humidity
 
   # Energy usage sensor
   - platform: homeassistant
@@ -396,6 +452,31 @@ text_sensor:
     id: last_wakeup
     retain: true
 
+# Switches
+switch:
+  # Proxon PCT
+  - platform: homeassistant
+    id: pct_freigabe_abstellraum
+    entity_id: switch.proxon_heizelement_abstellraum
+  - platform: homeassistant
+    id: pct_freigabe_buro
+    entity_id: switch.proxon_heizelement_buero
+  - platform: homeassistant
+    id: pct_freigabe_flur
+    entity_id: switch.proxon_heizelement_flur
+  - platform: homeassistant
+    id: pct_freigabe_klara
+    entity_id: switch.proxon_heizelement_klara
+  - platform: homeassistant
+    id: pct_freigabe_nils
+    entity_id: switch.proxon_heizelement_nils
+  - platform: homeassistant
+    id: pct_freigabe_schlafzimmer
+    entity_id: switch.proxon_heizelement_schlafzimmer
+  - platform: homeassistant
+    id: pct_freigabe_wohnzimmer
+    entity_id: switch.proxon_heizelement_wohnzimmer
+
 # Display configuration (Waveshare 7.5" ePaper)
 display:
   - platform: waveshare_epaper
@@ -419,14 +500,14 @@ display:
     lambda: |-
       int margin_x = 20;
       int margin_y = 15;
-      int line_height = 40;
+      int line_height = 35;
       int table_start_y = 210;
 
       auto now = id(home_time).now();
       int timezone_offset = now.is_dst ? 2 : 1;
 
       if (now.is_valid()) {
-        const char* days[] = {"", "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"};
+        const char* days[] = {"", "So.", "Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa."};
         const char* months[] = {"", "Januar", "Februar", "März", "April", "Mai", "Juni",
                                 "Juli", "August", "September", "Oktober", "November", "Dezember"};
 
@@ -494,47 +575,74 @@ display:
       it.print(margin_x + 220, table_start_y, id(mdi), TextAlign::TOP_LEFT, "\U000F0F54");
       it.print(margin_x + 350, table_start_y, id(mdi), TextAlign::TOP_LEFT, "\U000F058E");
 
-      it.print(margin_x, table_start_y + line_height, id(segoe_small), TextAlign::TOP_LEFT, "Wohnzimmer");
+      it.print(margin_x, table_start_y + line_height, id(segoe_small), TextAlign::TOP_LEFT, "Wohn-/Esszimmer");
       it.printf(margin_x + 220, table_start_y + line_height, id(segoe_small), "%.1f °C", id(temp_wohnzimmer).state);
       it.printf(margin_x + 350, table_start_y + line_height, id(segoe_small), "%.0f %%", id(humid_wohnzimmer).state);
+      if (id(pct_status_wohnzimmer).state) { it.print(margin_x + 282, table_start_y + line_height, id(mdi_xsmall), TextAlign::TOP_LEFT, "\U000F1A45"); }
 
-      it.print(margin_x, table_start_y + 2*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Bad");
-      it.printf(margin_x + 220, table_start_y + 2*line_height, id(segoe_small), "%.1f °C", id(temp_bad).state);
-      it.printf(margin_x + 350, table_start_y + 2*line_height, id(segoe_small), "%.0f %%", id(humid_bad).state);
+      it.print(margin_x, table_start_y + 2*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Abstellraum");
+      it.printf(margin_x + 220, table_start_y + 2*line_height, id(segoe_small), "%.1f °C", id(temp_abstellraum).state);
+      it.printf(margin_x + 350, table_start_y + 2*line_height, id(segoe_small), "%.0f %%", id(humid_abstellraum).state);
+      if (id(pct_status_abstellraum).state) { it.print(margin_x + 282, table_start_y + 2*line_height, id(mdi_xsmall), TextAlign::TOP_LEFT, "\U000F1A45"); }
 
-      it.print(margin_x, table_start_y + 3*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Büro");
-      it.printf(margin_x + 220, table_start_y + 3*line_height, id(segoe_small), "%.1f °C", id(temp_buro).state);
-      it.printf(margin_x + 350, table_start_y + 3*line_height, id(segoe_small), "%.0f %%", id(humid_buro).state);
+      it.print(margin_x, table_start_y + 3*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Gäste-WC");
+      it.printf(margin_x + 220, table_start_y + 3*line_height, id(segoe_small), "%.1f °C", id(temp_klo).state);
+      it.printf(margin_x + 350, table_start_y + 3*line_height, id(segoe_small), "%.0f %%", id(humid_klo).state);
 
       it.print(margin_x, table_start_y + 4*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Schlafzimmer");
       it.printf(margin_x + 220, table_start_y + 4*line_height, id(segoe_small), "%.1f °C", id(temp_schlafzimmer).state);
       it.printf(margin_x + 350, table_start_y + 4*line_height, id(segoe_small), "%.0f %%", id(humid_schlafzimmer).state);
+      if (id(pct_status_schlafzimmer).state) { it.print(margin_x + 282, table_start_y + 4*line_height, id(mdi_xsmall), TextAlign::TOP_LEFT, "\U000F1A45"); }
 
-      it.print(margin_x, table_start_y + 5*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Klo");
-      it.printf(margin_x + 220, table_start_y + 5*line_height, id(segoe_small), "%.1f °C", id(temp_klo).state);
-      it.printf(margin_x + 350, table_start_y + 5*line_height, id(segoe_small), "%.0f %%", id(humid_klo).state);
+      it.print(margin_x, table_start_y + 5*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Nils");
+      it.printf(margin_x + 220, table_start_y + 5*line_height, id(segoe_small), "%.1f °C", id(temp_nils).state);
+      it.printf(margin_x + 350, table_start_y + 5*line_height, id(segoe_small), "%.0f %%", id(humid_nils).state);
+      if (id(pct_status_nils).state) { it.print(margin_x + 282, table_start_y + 5*line_height, id(mdi_xsmall), TextAlign::TOP_LEFT, "\U000F1A45"); }
 
-      it.line(0, 455, 800, 455);
-      it.printf(margin_x, 465, id(mdi), "\U000F140B");
-      it.printf(margin_x + 40, 465, id(segoe_small), "%.1f kWh", id(energy_today).state);
-      it.printf(margin_x + 150, 465, id(segoe_small), "%.1f kWh", id(energy_hour).state);
-      it.printf(margin_x + 350, 465, id(mdi), "\U000F1901");
-      it.printf(margin_x + 390, 465, id(segoe_small), "%.0f %%", id(battery_charge_percent).state);
+      it.print(margin_x, table_start_y + 6*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Klara");
+      it.printf(margin_x + 220, table_start_y + 6*line_height, id(segoe_small), "%.1f °C", id(temp_klara).state);
+      it.printf(margin_x + 350, table_start_y + 6*line_height, id(segoe_small), "%.0f %%", id(humid_klara).state);
+      if (id(pct_status_klara).state) { it.print(margin_x + 282, table_start_y + 6*line_height, id(mdi_xsmall), TextAlign::TOP_LEFT, "\U000F1A45"); }
+
+      it.print(margin_x, table_start_y + 7*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Büro");
+      it.printf(margin_x + 220, table_start_y + 7*line_height, id(segoe_small), "%.1f °C", id(temp_buro).state);
+      it.printf(margin_x + 350, table_start_y + 7*line_height, id(segoe_small), "%.0f %%", id(humid_buro).state);
+      if (id(pct_status_buro).state) { it.print(margin_x + 282, table_start_y + 7*line_height, id(mdi_xsmall), TextAlign::TOP_LEFT, "\U000F1A45"); }
+
+      it.print(margin_x, table_start_y + 8*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Bad");
+      it.printf(margin_x + 220, table_start_y + 8*line_height, id(segoe_small), "%.1f °C", id(temp_bad).state);
+      it.printf(margin_x + 350, table_start_y + 8*line_height, id(segoe_small), "%.0f %%", id(humid_bad).state);
+
+      it.print(margin_x, table_start_y + 9*line_height, id(segoe_small), TextAlign::TOP_LEFT, "Garage");
+      it.printf(margin_x + 220, table_start_y + 9*line_height, id(segoe_small), "%.1f °C", id(temp_garage).state);
+      it.printf(margin_x + 350, table_start_y + 9*line_height, id(segoe_small), "%.0f %%", id(humid_garage).state);
+      
+
+
+
+
+
+      it.line(0, 570, 800, 570);
+      it.printf(margin_x, 580, id(mdi), "\U000F140B");
+      it.printf(margin_x + 40, 580, id(segoe_small), "%.1f kWh", id(energy_today).state);
+      it.printf(margin_x + 150, 580, id(segoe_small), "%.1f kWh", id(energy_hour).state);
+      it.printf(margin_x + 350, 580, id(mdi), "\U000F1901");
+      it.printf(margin_x + 390, 580, id(segoe_small), "%.0f %%", id(battery_charge_percent).state);
 
       
 
-      it.line(0, 540, 800, 540);
+      it.line(0, 620, 800, 620);
       if (!id(abholung_biotonne).state.empty()) {
-        it.printf(margin_x, 560, id(mdi), "\U000F1A38");
-        it.printf(margin_x + 40, 560, id(segoe_small), "Biomüll %s", id(abholung_biotonne).state.c_str());
+        it.printf(margin_x, 640, id(mdi), "\U000F1A38");
+        it.printf(margin_x + 40, 640, id(segoe_small), "Biomüll %s", id(abholung_biotonne).state.c_str());
       }
       if (!id(abholung_gelbe_tonne).state.empty()) {
-        it.printf(margin_x, 560 + line_height, id(mdi), "\U000F044C");
-        it.printf(margin_x + 40, 560 + line_height, id(segoe_small), "Gelbe Tonne %s", id(abholung_gelbe_tonne).state.c_str());
+        it.printf(margin_x, 640 + line_height, id(mdi), "\U000F044C");
+        it.printf(margin_x + 40, 640 + line_height, id(segoe_small), "Gelbe Tonne %s", id(abholung_gelbe_tonne).state.c_str());
       }
       if (!id(abholung_restmulltonne).state.empty()) {
-        it.printf(margin_x, 560 + 2*line_height, id(mdi), "\U000F01B4");
-        it.printf(margin_x + 40, 560 + 2*line_height, id(segoe_small), "Restmüll %s", id(abholung_restmulltonne).state.c_str());
+        it.printf(margin_x, 640 + 2*line_height, id(mdi), "\U000F01B4");
+        it.printf(margin_x + 40, 640 + 2*line_height, id(segoe_small), "Restmüll %s", id(abholung_restmulltonne).state.c_str());
       }
 
 
