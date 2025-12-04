@@ -1,0 +1,911 @@
+- name: proxon_modbus
+  type: tcp
+  host: 192.168.178.202
+  port: 502
+  delay: 1
+  timeout: 5
+
+  ##########################
+  # Zuordnung Bedienpanele #
+  ##########################
+  # ZBP   Wohnzimmer
+  # HNBP  Büro
+  # NBP1  Flur
+  # NBP2  Abstellraum
+  # NBP3  Schlafzimmer
+  # NBP4  Nils
+  # NBP5  Klara
+
+  switches:
+    ################
+    # Heizelemente #
+    ################
+    - name: "Proxon Heizelemente Global"
+      unique_id: proxon_heizelemente_global
+      slave: 41
+      address: 325
+      scan_interval: 15
+      verify:
+        delay: 1
+    - name: "Proxon Heizelement Wohnzimmer"
+      unique_id: proxon_heizelement_wohnzimmer
+      slave: 41
+      address: 187
+      scan_interval: 15
+      verify:
+        delay: 1
+    - name: "Proxon Heizelement Büro"
+      unique_id: proxon_heizelement_buero
+      slave: 41
+      address: 253
+      scan_interval: 15
+      verify:
+        delay: 1
+    - name: "Proxon Heizelement Flur"
+      unique_id: proxon_heizelement_Flur
+      slave: 41
+      address: 254
+      scan_interval: 15
+      verify:
+        delay: 1
+    - name: "Proxon Heizelement Abstellraum"
+      unique_id: proxon_heizelement_abstellraum
+      slave: 41
+      address: 255
+      scan_interval: 15
+      verify:
+        delay: 1
+    - name: "Proxon Heizelement Schlafzimmer"
+      unique_id: proxon_heizelement_schlafzimmer
+      slave: 41
+      address: 256
+      scan_interval: 15
+      verify:
+        delay: 1
+    - name: "Proxon Heizelement Nils"
+      unique_id: proxon_heizelement_nils
+      slave: 41
+      address: 257
+      scan_interval: 15
+      verify:
+        delay: 1
+    - name: "Proxon Heizelement Klara"
+      unique_id: proxon_heizelement_klara
+      slave: 41
+      address: 258
+      scan_interval: 15
+      verify:
+        delay: 1
+    ###########
+    # Kühlung #
+    ###########
+    - name: "Proxon Kuehlung"
+      unique_id: proxon_kuehlung
+      slave: 41
+      address: 62
+      scan_interval: 15
+      verify:
+        delay: 1
+    ########
+    # T300 #
+    ########
+    - name: "Proxon T300 Heizstab Freigabe" # Heizstab Freigabe
+      unique_id: proxon_t300_heizstab_freigabe
+      slave: 41
+      address: 2001
+      scan_interval: 15
+      verify:
+        delay: 1
+
+  binary_sensors:
+    #######
+    # FWT #
+    #######
+    - name: "Proxon Zustand Bypass"
+      unique_id: proxon_zustand_bypass
+      scan_interval: 10
+      slave: 41
+      address: 222
+      input_type: input
+
+    ########
+    # T300 #
+    ########
+    - name: "Proxon T300 Heizstab Status" # Ist Heizstabd An/Aus?
+      unique_id: proxon_t300_heizstab_status
+      scan_interval: 10
+      slave: 41
+      address: 826
+      input_type: input
+    - name: "Proxon T300 Kompressor Status"
+      unique_id: proxon_t300_kompressor_status
+      scan_interval: 10
+      slave: 41
+      address: 824
+      input_type: input
+    - name: "Proxon T300 Ventilator"
+      unique_id: proxon_t300_ventilator
+      scan_interval: 10
+      slave: 41
+      address: 827
+      input_type: input
+    - name: "Proxon T300 Abtauen"
+      unique_id: proxon_t300_abtauen
+      scan_interval: 15
+      slave: 41
+      address: 828
+      input_type: input
+
+  sensors:
+    ##############
+    # FWT Status #
+    ##############
+    - name: "Proxon Modbus Status"
+      unique_id: proxon_status_modbus
+      scan_interval: 1800
+      slave: 41
+      address: 438
+      input_type: holding
+      data_type: uint16
+
+    - name: "Proxon Betriebsart"
+      unique_id: proxon_betriebsart
+      scan_interval: 15
+      slave: 41
+      address: 16
+      input_type: holding
+      data_type: uint16
+    - name: "Proxon aktuelle Betriebsart"
+      unique_id: proxon_aktuelle_betriebsart
+      scan_interval: 10
+      slave: 41
+      address: 23
+      input_type: input
+      data_type: int16
+    - name: "Proxon aktuelle WP-Betriebsart"
+      unique_id: proxon_aktuelle_wp_betriebsart
+      scan_interval: 10
+      slave: 41
+      address: 241
+      input_type: input
+      data_type: int16
+    - name: "Proxon Lüftungsstufe" # eingestellte Lüftungsstufe für Modi mit wählbarer Stufe
+      unique_id: proxon_lueftungsstufe
+      scan_interval: 20
+      slave: 41
+      address: 22
+      input_type: holding
+      data_type: uint16
+    - name: "Proxon aktuelle Lüftungsstufe (Zuluft)"
+      unique_id: proxon_aktuelle_lueftungsstufe_zuluft
+      scan_interval: 20
+      slave: 41
+      address: 154
+      input_type: input
+      data_type: int16
+    - name: "Proxon aktuelle Lüftungsstufe (Abluft)"
+      unique_id: proxon_aktuelle_lueftungsstufe_abluft
+      scan_interval: 20
+      slave: 41
+      address: 211
+      input_type: input
+      data_type: int16
+    - name: "Proxon Stunden Abtau An"
+      unique_id: proxon_stunden_abtau_an
+      scan_interval: 60
+      slave: 41
+      address: 475
+      input_type: holding
+      data_type: uint16
+      device_class: duration
+      unit_of_measurement: h
+
+    - name: "Proxon Drehzahl Kompressor"
+      unique_id: proxon_drehzahl_kompressor
+      scan_interval: 15
+      slave: 41
+      address: 190
+      input_type: input
+      data_type: int16
+      unit_of_measurement: rpm
+    - name: "Proxon Drehzahl Zuluft"
+      unique_id: proxon_drehzahl_zuluft
+      scan_interval: 15
+      slave: 41
+      address: 0
+      input_type: input
+      data_type: int16
+      unit_of_measurement: rpm
+    - name: "Proxon Drehzahl Abluft"
+      unique_id: proxon_drehzahl_abluft
+      scan_interval: 15
+      slave: 41
+      address: 1
+      input_type: input
+      data_type: int16
+      unit_of_measurement: rpm
+
+    - name: "Proxon Leistungsaufnahme"
+      unique_id: proxon_leistungsaufnahme
+      scan_interval: 10
+      slave: 41
+      address: 25
+      input_type: input
+      unit_of_measurement: W
+      scale: 0.1
+      precision: 1
+      data_type: int16
+      device_class: power
+    #- name: "Proxon Leistungsaufnahme PCB"
+    #  unique_id: proxon_leistungsaufnahme_pcb
+    #  scan_interval: 10
+    #  slave: 41
+    #  address: 19
+    #  input_type: input
+    #  unit_of_measurement: W
+    #  scale: 0.1
+    #  precision: 1
+    #  data_type: int16
+    #  device_class: power
+    #- name: "Proxon Leistungsaufnahme FU"
+    #  unique_id: proxon_leistungsaufnahme_fu
+    #  scan_interval: 10
+    #  slave: 41
+    #  address: 20
+    #  input_type: input
+    #  unit_of_measurement: W
+    #  scale: 0.1
+    #  precision: 1
+    #  data_type: int16
+    #  device_class: power
+
+    - name: "Proxon Intensivlüftung Restzeit"
+      unique_id: proxon_intensivlueftung_restzeit
+      scan_interval: 15
+      slave: 41
+      address: 133
+      input_type: holding
+      unit_of_measurement: min
+      data_type: uint16
+      device_class: duration
+    - name: "Proxon Intensivlüftung Sollzeit"
+      unique_id: proxon_intensivlueftung_sollzeit
+      scan_interval: 120
+      slave: 41
+      address: 189
+      input_type: holding
+      unit_of_measurement: min
+      data_type: uint16
+      device_class: duration
+
+    - name: "Proxon Laufzeit"
+      unique_id: proxon_laufzeit
+      scan_interval: 3600
+      slave: 41
+      address: 467
+      input_type: holding
+      device_class: duration
+      unit_of_measurement: h # hours
+      data_type: uint16
+    - name: "Proxon Standzeit FWT Gerätefilter"
+      unique_id: proxon_standzeit_fwt_geraetefilter
+      scan_interval: 3600
+      slave: 41
+      address: 460
+      input_type: holding
+      device_class: duration
+      unit_of_measurement: d # this is months, not days, but months is not supported
+      data_type: uint16
+    - name: "Proxon Nutzzeit FWT Gerätefilter"
+      unique_id: proxon_nutzzeit_fwt_geraetefilter
+      scan_interval: 3600
+      slave: 41
+      address: 469
+      input_type: holding
+      unit_of_measurement: h
+      data_type: uint16
+      device_class: duration
+
+    ################
+    # Luftqualität #
+    ################
+    - name: "Proxon CO2 Wohnzimmer"
+      unique_id: proxon_co2_wohnzimmer
+      scan_interval: 15
+      slave: 41
+      address: 21
+      input_type: input
+      unit_of_measurement: ppm
+      data_type: int16
+      device_class: carbon_dioxide
+    - name: "Proxon Luftfeuchtigkeit Wohnzimmer"
+      unique_id: proxon_luftfeuchtigkeit_wohnzimmer
+      scan_interval: 30
+      slave: 41
+      address: 22
+      input_type: input
+      unit_of_measurement: "%"
+      data_type: int16
+      device_class: humidity
+
+    ####################
+    # Ist-Temperaturen #
+    ####################
+    - name: "Proxon Ist-Temperatur Wohnzimmer"
+      unique_id: proxon_ist_temperatur_wohnzimmer
+      scan_interval: 30
+      slave: 41
+      address: 41
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: uint16
+      device_class: temperature
+    - name: "Proxon Ist-Temperatur Büro"
+      unique_id: proxon_ist_temperatur_buero
+      scan_interval: 30
+      slave: 41
+      address: 40
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: uint16
+      device_class: temperature
+    #- name: "Proxon Ist-Temperatur Büro (Nebenbedienteil)"
+    #  unique_id: proxon_ist_temperatur_buero_nebenbedienteil
+    #  scan_interval: 30
+    #  slave: 41
+    #  address: 590
+    #  input_type: input
+    #  unit_of_measurement: °C
+    #  scale: 0.1
+    #  precision: 1
+    #  data_type: int16
+    #  device_class: temperature
+    - name: "Proxon Ist-Temperatur Flur"
+      unique_id: proxon_ist_temperatur_flur
+      scan_interval: 30
+      slave: 41
+      address: 593
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.1
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Ist-Temperatur Abstellraum"
+      unique_id: proxon_ist_temperatur_abstellraum
+      scan_interval: 30
+      slave: 41
+      address: 596
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.1
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Ist-Temperatur Schlafzimmer"
+      unique_id: proxon_ist_temperatur_schlafzimmer
+      scan_interval: 30
+      slave: 41
+      address: 599
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.1
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Ist-Temperatur Nils"
+      unique_id: proxon_ist_temperatur_nils
+      scan_interval: 30
+      slave: 41
+      address: 602
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.1
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Ist-Temperatur Klara"
+      unique_id: proxon_ist_temperatur_klara
+      scan_interval: 30
+      slave: 41
+      address: 605
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.1
+      precision: 1
+      data_type: int16
+      device_class: temperature
+
+    #####################
+    # Soll-Temperaturen #
+    #####################
+    - name: "Proxon Soll-Temperatur Wohnzimmer"
+      unique_id: proxon_soll_temperatur_wohnzimmer
+      scan_interval: 30
+      slave: 41
+      address: 70
+      input_type: holding
+      scale: 0.01
+      precision: 1
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+
+    - name: "Proxon Soll-Temperatur Büro" # <- this has no effect, use Offset + middle temperature
+      unique_id: proxon_soll_temperatur_buero
+      scan_interval: 30
+      slave: 41
+      address: 75
+      input_type: holding
+      scale: 0.01
+      precision: 1
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+
+      ###################################
+    - name: "Proxon Offset-Temperatur Büro"
+      unique_id: proxon_offset_temperatur_buero
+      scan_interval: 30
+      slave: 41
+      address: 213
+      input_type: holding
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Offset-Temperatur Flur"
+      unique_id: proxon_offset_temperatur_flur
+      scan_interval: 30
+      slave: 41
+      address: 214
+      input_type: holding
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Offset-Temperatur Abstellraum"
+      unique_id: proxon_offset_temperatur_abstellraum
+      scan_interval: 30
+      slave: 41
+      address: 215
+      input_type: holding
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Offset-Temperatur Schlafzimmer"
+      unique_id: proxon_offset_temperatur_schlafzimmer
+      scan_interval: 30
+      slave: 41
+      address: 216
+      input_type: holding
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Offset-Temperatur Nils"
+      unique_id: proxon_offset_temperatur_nils
+      scan_interval: 30
+      slave: 41
+      address: 217
+      input_type: holding
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Offset-Temperatur Klara"
+      unique_id: proxon_offset_temperatur_klara
+      scan_interval: 30
+      slave: 41
+      address: 218
+      input_type: holding
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+      ##############################
+
+      ##############################
+    - name: "Proxon Mittel-Temperatur Büro"
+      unique_id: proxon_mittel_temperatur_buero
+      scan_interval: 60
+      slave: 41
+      address: 233
+      input_type: holding
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Mittel-Temperatur Flur"
+      unique_id: proxon_mittel_temperatur_flur
+      scan_interval: 60
+      slave: 41
+      address: 234
+      input_type: holding
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Mittel-Temperatur Abstellraum"
+      unique_id: proxon_mittel_temperatur_abstellraum
+      scan_interval: 60
+      slave: 41
+      address: 235
+      input_type: holding
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Mittel-Temperatur Schlafzimmer"
+      unique_id: proxon_mittel_temperatur_schlafzimmer
+      scan_interval: 60
+      slave: 41
+      address: 236
+      input_type: holding
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Mittel-Temperatur Nils"
+      unique_id: proxon_mittel_temperatur_nils
+      scan_interval: 60
+      slave: 41
+      address: 237
+      input_type: holding
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Mittel-Temperatur Klara"
+      unique_id: proxon_mittel_temperatur_klara
+      scan_interval: 60
+      slave: 41
+      address: 238
+      input_type: holding
+      unit_of_measurement: °C
+      data_type: int16
+      device_class: temperature
+      ##############################
+
+    #- name: "Proxon T2.1 Zonentemperatur 1"
+    #  unique_id: proxon_t21_zonentemperatur_1
+    #  scan_interval: 30
+    #  slave: 41
+    #  address: 263
+    #  input_type: input
+    #  unit_of_measurement: °C
+    #  scale: 0.01
+    #  precision: 1
+    #  data_type: uint16
+    #  device_class: temperature
+    #- name: "Proxon T2.2 Zonentemperatur 2"
+    #  unique_id: proxon_t21_zonentemperatur_2
+    #  scan_interval: 30
+    #  slave: 41
+    #  address: 264
+    #  input_type: input
+    #  unit_of_measurement: °C
+    #  scale: 0.01
+    #  precision: 1
+    #  data_type: uint16
+    #  device_class: temperature
+    #- name: "Proxon Soll-Zonentemperatur 1"
+    #  unique_id: proxon_soll_zonentemperatur_1
+    #  scan_interval: 30
+    #  slave: 41
+    #  address: 265
+    #  input_type: input
+    #  unit_of_measurement: °C
+    #  scale: 0.01
+    #  precision: 1
+    #  data_type: uint16
+    #  device_class: temperature
+    #- name: "Proxon Soll-Zonentemperatur 2"
+    #  unique_id: proxon_soll_zonentemperatur_2
+    #  scan_interval: 30
+    #  slave: 41
+    #  address: 251
+    #  input_type: input
+    #  unit_of_measurement: °C
+    #  scale: 0.01
+    #  precision: 1
+    #  data_type: uint16
+    #  device_class: temperature
+
+    ################
+    # Heizelemente #
+    ################
+    - name: "Proxon Heizelement Status"
+      unique_id: proxon_heizelement_status
+      scan_interval: 15
+      slave: 41
+      address: 574
+      data_type: int16
+      input_type: input
+
+    ##############
+    # Wärmepumpe #
+    ##############
+    - name: "Proxon Temperatur Frischluft"
+      unique_id: proxon_temperatur_frischluft
+      scan_interval: 15
+      slave: 41
+      address: 198
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Temperatur Zuluft"
+      unique_id: proxon_temperatur_zuluft
+      scan_interval: 15
+      slave: 41
+      address: 195
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Temperatur Fortluft"
+      unique_id: proxon_temperatur_fortluft
+      scan_interval: 15
+      slave: 41
+      address: 197
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Temperatur Abluft"
+      unique_id: proxon_temperatur_abluft
+      scan_interval: 15
+      slave: 41
+      address: 196
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Temperatur T5 vor Verdampfer"
+      unique_id: proxon_temperatur_t5_vor_verdampfer
+      scan_interval: 15
+      slave: 41
+      address: 175
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Temperatur T6 Verdampfer"
+      unique_id: proxon_temperatur_t6_verdampfer
+      scan_interval: 15
+      slave: 41
+      address: 176
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Temperatur T8 nach Vorwärme"
+      unique_id: proxon_temperatur_t8_nach_vorwarme
+      scan_interval: 15
+      slave: 41
+      address: 177
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Temperatur T10 Kondensator"
+      unique_id: proxon_temperatur_t10_kondensator
+      scan_interval: 15
+      slave: 41
+      address: 179
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Temperatur T11 Sauggas nach Verdampfer"
+      unique_id: proxon_temperatur_t11_sauggas_nach_verdampfer
+      scan_interval: 15
+      slave: 41
+      address: 208
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Temperatur T12 vor Kondensator"
+      unique_id: proxon_temperatur_t12_vor_kondensator
+      scan_interval: 15
+      slave: 41
+      address: 178
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Temperatur T13 Kompressor"
+      unique_id: proxon_temperatur_t13 Kompressor
+      scan_interval: 15
+      slave: 41
+      address: 180
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Temperatur T14 Sauggas nach Kondensator"
+      unique_id: proxon_temperatur_t14_sauggas_nach_kondensator
+      scan_interval: 15
+      slave: 41
+      address: 207
+      input_type: input
+      unit_of_measurement: °C
+      scale: 0.01
+      precision: 1
+      data_type: int16
+      device_class: temperature
+    - name: "Proxon Delta Sauggas-Verdampfertemperatur"
+      unique_id: proxon_delta_sauggas_verdampfertemperatur
+      scan_interval: 15
+      slave: 41
+      address: 202
+      input_type: input
+      scale: 0.1
+      #offset: -100
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
+
+    ########
+    # T300 #
+    ########
+    - name: "Proxon T300 Ist-Temperatur Wasser oben"
+      unique_id: proxon_t300_ist_temperatur_wasser_oben
+      scan_interval: 15
+      slave: 41
+      address: 814
+      input_type: input
+      scale: 0.1
+      offset: -100
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
+    - name: "Proxon T300 Ist-Temperatur Wasser unten"
+      unique_id: proxon_t300_ist_temperatur_wasser_unten
+      scan_interval: 15
+      slave: 41
+      address: 813
+      input_type: input
+      scale: 0.1
+      offset: -100
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
+    - name: "Proxon T300 Temperatur T5 vor Verdampfer"
+      unique_id: proxon_t300_temperatur_t5_vor_verdampfer
+      scan_interval: 15
+      slave: 41
+      address: 811
+      input_type: input
+      scale: 0.1
+      offset: -100
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
+    - name: "Proxon T300 Temperatur T6 Verdampfer"
+      unique_id: proxon_t300_temperatur_t6_verdampfer
+      scan_interval: 15
+      slave: 41
+      address: 812
+      input_type: input
+      scale: 0.1
+      offset: -100
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
+    - name: "Proxon T300 Temperatur T13 Kompressor"
+      unique_id: proxon_t300_temperatur_t13_kompressor
+      scan_interval: 15
+      slave: 41
+      address: 815
+      input_type: input
+      scale: 0.1
+      offset: -100
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
+    - name: "Proxon T300 Temperatur T11 Sauggas nach Verdampfer"
+      unique_id: proxon_t300_temperatur_t11_sauggas_nach_verdampfer
+      scan_interval: 15
+      slave: 41
+      address: 816
+      input_type: input
+      scale: 0.1
+      offset: -100
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
+    - name: "Proxon T300 Temperatur T9 Externer Fühler"
+      unique_id: proxon_t300_temperatur_t9_externer_fuehler
+      scan_interval: 15
+      slave: 41
+      address: 817
+      input_type: input
+      scale: 0.1
+      offset: -100
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
+    - name: "Proxon T300 Verdampfertemperatur"
+      unique_id: proxon_t300_verdampfertemperatur
+      scan_interval: 15
+      slave: 41
+      address: 829
+      input_type: input
+      scale: 0.1
+      offset: -100
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
+    - name: "Proxon T300 Delta Sauggas-Verdampfertemperatur"
+      unique_id: proxon_t300_delta_sauggas_verdampfertemperatur
+      scan_interval: 15
+      slave: 41
+      address: 830
+      input_type: input
+      scale: 0.1
+      #offset: -100
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
+    - name: "Proxon T300 Soll-Temperatur Wasser"
+      unique_id: proxon_t300_soll_temperatur_wasser
+      scan_interval: 30
+      slave: 41
+      address: 2000
+      input_type: holding
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
+    - name: "Proxon T300 Heizstab Soll-Temperatur"
+      unique_id: proxon_t300_heizstab_soll_temperatur
+      scan_interval: 30
+      slave: 41
+      address: 2003
+      input_type: holding
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
+    - name: "Proxon T300 Delta T Mid T Low"
+      unique_id: proxon_t300_delta_t_mid_t_low
+      scan_interval: 30
+      slave: 41
+      address: 2052
+      input_type: holding
+      scale: 0.1
+      precision: 1
+      unit_of_measurement: °C
+      data_type: uint16
+      device_class: temperature
